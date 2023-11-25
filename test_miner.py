@@ -3,8 +3,6 @@ import re, argparse, configparser
 from web3 import Web3
 from passlib.hash import argon2
 from random import choice, randrange
-from json import dumps as json_dumps
-
 
 
 # Set up argument parser
@@ -131,7 +129,6 @@ def update_memory_cost_periodically():
     time.sleep(10)  # start checking in 10 seconds after launch 
     while True:
         updated_memory_cost = fetch_difficulty_from_server()
-        updated_memory_cost = 8
         if updated_memory_cost != memory_cost:
             print(f"Updating difficulty to {updated_memory_cost}")
         time.sleep(60)  # Fetch every 60 seconds
@@ -140,7 +137,7 @@ def update_memory_cost_periodically():
 def fetch_difficulty_from_server():
     global memory_cost
     try:
-        response = requests.get('http://xenblocks.io/difficulty')
+        response = requests.get('http://localhost:8888/difficulty')
         response_data = response.json()
         return str(response_data['difficulty'])
     except Exception as e:
@@ -262,10 +259,11 @@ def mine_block(stored_targets, prev_hash, address):
                     if re.search("XUNI[0-9]", hashed_data) and is_within_five_minutes_of_hour():
                         found_valid_hash = True
                         break
-                    elif target == "XEN":
+                    elif target == "XEN1":
                         found_valid_hash = True
-                        capital_count = sum(1 for char in re.sub('[0-9]', '', hashed_data) if char.isupper())
-                        if capital_count >= 65:
+                        last_element = hashed_data.split("$")[-1]
+                        hash_uppercase_only = ''.join(filter(str.isupper, last_element))
+                        if len(hash_uppercase_only) >= 50:
                             print(f"{RED}Superblock found{RESET}")
                         break
                     else:
@@ -295,17 +293,49 @@ def mine_block(stored_targets, prev_hash, address):
         "worker": worker_id  # Adding worker information to the payload
     }
 
+    # Append the string to a log file
+    log_file = 'log_blocks.log'  # replace with your log file's path
+
+    with open(log_file, 'a') as file:  # 'a' means append mode
+        file.write(json.dumps(payload) + '\n')
+
     print (payload)
 
     max_retries = 2
     retries = 0
+
+    while retries <= max_retries:
+        # Make the POST request
+        response = requests.post('http://localhost:8888/verify', json=payload)
+
+        # Print the HTTP status code
+        print("HTTP Status Code:", response.status_code)
+
+        if target == "XEN1" and found_valid_hash and response.status_code == 200:
+            #submit proof of work validation of last sealed block
+            submit_pow(account, random_data, hashed_data)
+
+        if response.status_code != 500:  # If status code is not 500, break the loop
+            print("Server Response:", response.json())
+            break
+        
+        retries += 1
+        print(f"Retrying... ({retries}/{max_retries})")
+        time.sleep(10)  # You can adjust the sleep time
+
+
+        # Print the server's response
+        try:
+            print("Server Response:", response.json())
+        except Exception as e:
+            print("An error occurred:", e)
 
     return random_data, hashed_data, attempts, hashes_per_second
 
 
 if __name__ == "__main__":
     blockchain = []
-    stored_targets = ['XEN', 'XUNI']
+    stored_targets = ['XEN1', 'XUNI']
     num_blocks_to_mine = 20000000
     
     #Start difficulty monitoring thread

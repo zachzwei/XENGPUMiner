@@ -63,4 +63,3 @@ def run_db_operations():
 
 # Kick off the first run
 run_db_operations()
-
