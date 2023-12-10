@@ -1,8 +1,17 @@
 # XENBlocks 1 Line GPU Miner by z4ch
 
 I am lazy and cannot code anything.
-I copy pasta, make edits and use it.
+I copy pasta, make edits then use it.
+WTF is XenBlocks?
+Read: https://www.xencrypto.io/xenblocks-merged-pow-pos-chain-launched-by-jack-levin/
 
+If you want to start mining XenBlocks, you can rent some GPUs here:
+https://cloud.vast.ai/?ref_id=94252
+
+Choose the Template, Pytorch 2.0.1 Cuda11.7 Devel
+Run a Terminal and use the commands below.
+
+**Important**
 Edit the address first before you hit ENTER
 Or else I will get your mined blocks.
 
